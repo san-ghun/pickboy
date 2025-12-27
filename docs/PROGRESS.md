@@ -43,6 +43,13 @@
   - Added a manual game start mechanism (SPACE key) with a dedicated overlay.
   - Disabled player control and game logic until the trigger is activated.
 
+- **Phase 10: Code Modularization & Refactoring (2025-12-27)**
+  - Centralized all core types and interfaces into `src/types.ts`.
+  - Extracted UI/HUD logic from `GameScene.ts` into a modular class hierarchy (`BaseHUD`, `DialogueHUD`, `TaskHUD`, `StatusHUD`).
+  - Extracted player-specific logic (movement, followers) into the `Player` entity class.
+  - Refactored `GameScene.ts` to act as a lean orchestrator for managers, HUDs, and the player.
+  - Resolved build errors related to unused variables and type-only imports.
+
 ## 📊 Current State
 - Core Pick-to-Ship and Put-Away cycles are fully implemented with dynamic stock management and randomization.
 - UI provides real-time feedback on rack quantities.

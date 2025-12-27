@@ -13,6 +13,14 @@ A 2D top-down simulation game with a Pokémon-style pixel art aesthetic to exper
 - **Language**: TypeScript
 - **Tooling**: Vite
 
+## 🏗️ Project Structure
+The project follows a modular architecture for better readability and maintainability:
+- `/src/entities/`: Game entities like `Player.ts`.
+- `/src/ui/`: Modular HUD components (`DialogueHUD`, `TaskHUD`, `StatusHUD`).
+- `/src/managers/`: Logic handlers like `WarehouseManager` and `SlottingManager`.
+- `/src/scenes/`: Phaser scenes; `GameScene.ts` acts as the main orchestrator.
+- `/src/types.ts`: Centralized TypeScript definitions.
+
 ## ⚡ Quick Start
 1. Install dependencies:
    ```bash

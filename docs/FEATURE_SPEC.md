@@ -14,9 +14,11 @@
 ## 3. User Interface
 - **Screen Resolution**: 1024x600 (800x600 game area + 224px sidebar).
 - **Sidebar HUD**: A dedicated area on the right side of the screen for game information.
-  - **Status HUD**: Displays current coordinates and specific zone names.
-  - **Pick List HUD**: Real-time checklist of items required for the current order or inbound tasks.
-- **Dialogue Boxes**: Pokémon-style popups for tutorials and feedback, centered over the game area.
+- **Modular HUD System**:
+  - **StatusHUD**: Displays current coordinates, specific zone names, timer, and score.
+  - **TaskHUD**: Manages real-time checklist of items for orders or inbound tasks and target sparkles.
+  - **DialogueHUD**: Pokémon-style popups for tutorials and feedback.
+- **Player Entity**: Encapsulates 4-directional movement and follower inventory management.
 
 ## 4. Workflows
 - **Picking**: Approach a rack -> Press Space -> Item joins the follower chain.
