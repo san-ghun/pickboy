@@ -1,3 +1,10 @@
+export const GameMode = {
+    PICKING: 'PICKING',
+    INBOUND: 'INBOUND'
+} as const;
+
+export type GameModeType = typeof GameMode[keyof typeof GameMode];
+
 export interface OrderItem {
     id: string;
     itemType: string;
@@ -12,13 +19,35 @@ export interface Order {
     status: 'PENDING' | 'PICKING' | 'PACKING' | 'SHIPPED';
 }
 
+export interface InboundTask {
+    itemType: string;
+    targetSlotId: string;
+    isReceived: boolean;
+    isCompleted: boolean;
+}
+
 export class WarehouseManager {
     private currentOrder: Order | null = null;
+    private currentInboundTasks: InboundTask[] = [];
     private inventory: string[] = [];
     private readonly maxInventory = 3;
+    private mode: GameModeType = GameMode.PICKING;
 
     constructor() {
         this.generateNewOrder();
+    }
+
+    getMode(): GameModeType {
+        return this.mode;
+    }
+
+    switchMode(mode: GameModeType) {
+        this.mode = mode;
+        if (mode === GameMode.INBOUND) {
+            this.generateInboundTasks();
+        } else {
+            this.generateNewOrder();
+        }
     }
 
     private generateNewOrder() {
@@ -30,10 +59,23 @@ export class WarehouseManager {
             ],
             status: 'PENDING'
         };
+        this.currentInboundTasks = [];
+    }
+
+    private generateInboundTasks() {
+        this.currentInboundTasks = [
+            { itemType: 'Green Box', targetSlotId: 'A-01-5', isReceived: false, isCompleted: false },
+            { itemType: 'Yellow Box', targetSlotId: 'B-01-6', isReceived: false, isCompleted: false }
+        ];
+        this.currentOrder = null;
     }
 
     getCurrentOrder(): Order | null {
         return this.currentOrder;
+    }
+
+    getInboundTasks(): InboundTask[] {
+        return this.currentInboundTasks;
     }
 
     getInventory(): string[] {
@@ -42,6 +84,34 @@ export class WarehouseManager {
 
     canPickItem(): boolean {
         return this.inventory.length < this.maxInventory;
+    }
+
+    receiveItemFromDock(): InboundTask | null {
+        if (this.mode !== GameMode.INBOUND || !this.canPickItem()) return null;
+
+        const nextTask = this.currentInboundTasks.find(t => !t.isReceived);
+        if (nextTask) {
+            nextTask.isReceived = true;
+            this.inventory.push(nextTask.itemType);
+            return nextTask;
+        }
+        return null;
+    }
+
+    putAwayItem(slotId: string): boolean {
+        if (this.mode !== GameMode.INBOUND) return false;
+
+        const task = this.currentInboundTasks.find(t => t.targetSlotId === slotId && t.isReceived && !t.isCompleted);
+        if (task && this.inventory.includes(task.itemType)) {
+            task.isCompleted = true;
+            // Remove from inventory
+            const index = this.inventory.indexOf(task.itemType);
+            if (index > -1) {
+                this.inventory.splice(index, 1);
+            }
+            return true;
+        }
+        return false;
     }
 
     pickItem(slotId: string): boolean {
@@ -74,5 +144,9 @@ export class WarehouseManager {
             return true;
         }
         return false;
+    }
+
+    allInboundCompleted(): boolean {
+        return this.currentInboundTasks.length > 0 && this.currentInboundTasks.every(t => t.isCompleted);
     }
 }

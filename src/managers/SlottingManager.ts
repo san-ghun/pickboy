@@ -56,4 +56,20 @@ export class SlottingManager {
     getAllSlots(): Slot[] {
         return Array.from(this.slots.values());
     }
+
+    reserveSlot(id: string): boolean {
+        const slot = this.slots.get(id);
+        if (slot && !slot.occupied) {
+            slot.occupied = true;
+            return true;
+        }
+        return false;
+    }
+
+    clearSlot(id: string) {
+        const slot = this.slots.get(id);
+        if (slot) {
+            slot.occupied = false;
+        }
+    }
 }

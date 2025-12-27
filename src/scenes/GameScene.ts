@@ -1,5 +1,5 @@
 import { SlottingManager } from '../managers/SlottingManager';
-import { WarehouseManager } from '../managers/WarehouseManager';
+import { WarehouseManager, GameMode } from '../managers/WarehouseManager';
 
 export class GameScene extends Phaser.Scene {
     private player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
@@ -14,9 +14,11 @@ export class GameScene extends Phaser.Scene {
     private dialogueText!: Phaser.GameObjects.Text;
     private sparkles!: Phaser.GameObjects.Group;
     private shippingZone!: Phaser.GameObjects.Rectangle;
+    private receivingZone!: Phaser.GameObjects.Rectangle;
     private readonly speed = 160;
     private readonly tileSize = 32;
     private readonly shippingZonePos = { x: 21, y: 0, width: 4, height: 4 };
+    private readonly receivingZonePos = { x: 0, y: 15, width: 4, height: 3 };
 
     constructor() {
         super('GameScene');
@@ -57,6 +59,17 @@ export class GameScene extends Phaser.Scene {
         ).setOrigin(0);
         this.shippingZone.setStrokeStyle(2, 0x2980b9);
         this.add.text(this.shippingZone.x + 10, this.shippingZone.y + 10, "SHIPPING ZONE", { fontSize: '12px', color: '#fff' });
+
+        // Draw Receiving Zone (Bottom Left)
+        this.receivingZone = this.add.rectangle(
+            this.receivingZonePos.x * this.tileSize,
+            this.receivingZonePos.y * this.tileSize,
+            this.receivingZonePos.width * this.tileSize,
+            this.receivingZonePos.height * this.tileSize,
+            0x2ecc71, 0.4
+        ).setOrigin(0);
+        this.receivingZone.setStrokeStyle(2, 0x27ae60);
+        this.add.text(this.receivingZone.x + 10, this.receivingZone.y + 10, "RECEIVING DOCK", { fontSize: '12px', color: '#fff' });
 
         // Draw Racks
         const rackGraphics = this.add.graphics();
@@ -120,26 +133,63 @@ export class GameScene extends Phaser.Scene {
     }
 
     private updateOrderDisplay() {
-        const order = this.warehouseManager.getCurrentOrder();
-        if (order) {
-            let text = `Order: ${order.id}\nStatus: ${order.status}\n\nTasks:\n`;
+        const mode = this.warehouseManager.getMode();
 
-            // Update Sparkles
+        if (mode === 'PICKING') {
+            const order = this.warehouseManager.getCurrentOrder();
+            if (order) {
+                let text = `Order: ${order.id}\nStatus: ${order.status}\n\nTasks (PICK):\n`;
+
+                this.sparkles.clear(true, true);
+
+                order.items.forEach((item: any) => {
+                    const isPicked = item.picked >= item.quantity;
+                    const check = isPicked ? 'X' : ' ';
+                    text += `[${check}] ${item.itemType} (${item.slotId})\n`;
+
+                    if (!isPicked) {
+                        const slot = this.slottingManager.getSlotById(item.slotId);
+                        if (slot) {
+                            this.createSparkle(slot.x * this.tileSize + 16, slot.y * this.tileSize + 16);
+                        }
+                    }
+                });
+                this.orderText.setText(text);
+                this.orderText.setColor('#00ff00');
+            }
+        } else {
+            const tasks = this.warehouseManager.getInboundTasks();
+            let text = `Inbound Tasks (PUT AWAY):\n`;
+
             this.sparkles.clear(true, true);
 
-            order.items.forEach(item => {
-                const isPicked = item.picked >= item.quantity;
-                const check = isPicked ? 'X' : ' ';
-                text += `[${check}] ${item.itemType} (${item.slotId})\n`;
+            let anyToReceive = false;
+            tasks.forEach(task => {
+                const check = task.isCompleted ? 'X' : (task.isReceived ? '✓' : ' ');
+                text += `[${check}] ${task.itemType} -> ${task.targetSlotId}\n`;
 
-                if (!isPicked) {
-                    const slot = this.slottingManager.getSlotById(item.slotId);
-                    if (slot) {
-                        this.createSparkle(slot.x * this.tileSize + 16, slot.y * this.tileSize + 16);
+                if (!task.isCompleted) {
+                    if (!task.isReceived) {
+                        anyToReceive = true;
+                    } else {
+                        const slot = this.slottingManager.getSlotById(task.targetSlotId);
+                        if (slot) {
+                            this.createSparkle(slot.x * this.tileSize + 16, slot.y * this.tileSize + 16);
+                        }
                     }
                 }
             });
+
+            if (anyToReceive) {
+                // Flash the receiving dock
+                this.createSparkle(
+                    (this.receivingZonePos.x + this.receivingZonePos.width / 2) * this.tileSize,
+                    (this.receivingZonePos.y + this.receivingZonePos.height / 2) * this.tileSize
+                );
+            }
+
             this.orderText.setText(text);
+            this.orderText.setColor('#3498db');
         }
     }
 
@@ -185,15 +235,34 @@ export class GameScene extends Phaser.Scene {
 
             // Handle Interaction
             if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
-                if (this.warehouseManager.pickItem(slot.id)) {
-                    this.updateOrderDisplay();
-                    this.createFollower();
-                    this.cameras.main.flash(200, 100, 255, 100);
-                    this.showDialogue(`Picked up a ${slot.id}!`);
+                const mode = this.warehouseManager.getMode();
+                if (mode === GameMode.PICKING) {
+                    if (this.warehouseManager.pickItem(slot.id)) {
+                        this.updateOrderDisplay();
+                        this.createFollower();
+                        this.cameras.main.flash(200, 100, 255, 100);
+                        this.showDialogue(`Picked up from ${slot.id}!`);
 
-                    const order = this.warehouseManager.getCurrentOrder();
-                    if (order?.status === 'PACKING') {
-                        this.showDialogue("All items picked! \nGo to the Shipping Area (Top Right).");
+                        const order = this.warehouseManager.getCurrentOrder();
+                        if (order?.status === 'PACKING') {
+                            this.showDialogue("All items picked! \nGo to the Shipping Area (Top Right).");
+                        }
+                    }
+                } else {
+                    // Inbound Mode: Put Away
+                    if (this.warehouseManager.putAwayItem(slot.id)) {
+                        this.updateOrderDisplay();
+                        this.removeFollower();
+                        this.cameras.main.flash(200, 100, 255, 100);
+                        this.showDialogue(`Placed item in ${slot.id}!`);
+
+                        if (this.warehouseManager.allInboundCompleted()) {
+                            this.showDialogue("All inbound tasks complete! \nSwitching to Picking mode...");
+                            this.time.delayedCall(2000, () => {
+                                this.warehouseManager.switchMode(GameMode.PICKING);
+                                this.updateOrderDisplay();
+                            });
+                        }
                     }
                 }
             }
@@ -208,18 +277,46 @@ export class GameScene extends Phaser.Scene {
                 tileY < this.shippingZonePos.y + this.shippingZonePos.height
             );
 
+            // Check if in Receiving Zone
+            const isInReceiving = (
+                tileX >= this.receivingZonePos.x &&
+                tileX < this.receivingZonePos.x + this.receivingZonePos.width &&
+                tileY >= this.receivingZonePos.y &&
+                tileY < this.receivingZonePos.y + this.receivingZonePos.height
+            );
+
             if (isInShipping) {
                 this.statusText.setText("Location: SHIPPING ZONE");
                 if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
-                    if (this.warehouseManager.completeOrder()) {
-                        this.showDialogue("Order Shipped Successfully! \nGood job!");
-                        this.clearFollowers();
-                        this.updateOrderDisplay();
-                        this.cameras.main.shake(500, 0.01);
-                    } else {
-                        const order = this.warehouseManager.getCurrentOrder();
-                        if (order?.status === 'PICKING') {
-                            this.showDialogue("Order is incomplete! \nPick all items first.");
+                    if (this.warehouseManager.getMode() === GameMode.PICKING) {
+                        if (this.warehouseManager.completeOrder()) {
+                            this.showDialogue("Order Shipped! \nSwitching to Inbound mode...");
+                            this.clearFollowers();
+                            this.updateOrderDisplay();
+                            this.cameras.main.shake(500, 0.01);
+
+                            this.time.delayedCall(2000, () => {
+                                this.warehouseManager.switchMode(GameMode.INBOUND);
+                                this.updateOrderDisplay();
+                            });
+                        } else {
+                            const order = this.warehouseManager.getCurrentOrder();
+                            if (order?.status === 'PENDING' || order?.status === 'PICKING') {
+                                this.showDialogue("Order is incomplete! \nPick all items first.");
+                            }
+                        }
+                    }
+                }
+            } else if (isInReceiving) {
+                this.statusText.setText("Location: RECEIVING DOCK");
+                if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+                    if (this.warehouseManager.getMode() === GameMode.INBOUND) {
+                        const task = this.warehouseManager.receiveItemFromDock();
+                        if (task) {
+                            this.updateOrderDisplay();
+                            this.createFollower();
+                            this.cameras.main.flash(200, 255, 255, 100);
+                            this.showDialogue(`Received ${task.itemType}! \nTake it to ${task.targetSlotId}.`);
                         }
                     }
                 }
@@ -237,6 +334,13 @@ export class GameScene extends Phaser.Scene {
     private createFollower() {
         const follower = this.add.arc(this.player.x, this.player.y, 8, 0, 360, false, 0x00ff00);
         this.inventoryFollowers.push(follower);
+    }
+
+    private removeFollower() {
+        const follower = this.inventoryFollowers.pop();
+        if (follower) {
+            follower.destroy();
+        }
     }
 
     private updateFollowers() {
