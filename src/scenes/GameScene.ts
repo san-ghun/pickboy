@@ -15,6 +15,7 @@ export class GameScene extends Phaser.Scene {
     private sparkles!: Phaser.GameObjects.Group;
     private shippingZone!: Phaser.GameObjects.Rectangle;
     private receivingZone!: Phaser.GameObjects.Rectangle;
+    private rackLabels: Map<string, Phaser.GameObjects.Text> = new Map();
     private readonly speed = 160;
     private readonly tileSize = 32;
     private readonly shippingZonePos = { x: 21, y: 0, width: 4, height: 4 };
@@ -23,7 +24,7 @@ export class GameScene extends Phaser.Scene {
     constructor() {
         super('GameScene');
         this.slottingManager = new SlottingManager();
-        this.warehouseManager = new WarehouseManager();
+        this.warehouseManager = new WarehouseManager(this.slottingManager);
     }
 
     preload() {
@@ -76,8 +77,10 @@ export class GameScene extends Phaser.Scene {
         rackGraphics.fillStyle(0x7f8c8d);
         this.slottingManager.getAllSlots().forEach(slot => {
             rackGraphics.fillRect(slot.x * this.tileSize, slot.y * this.tileSize, this.tileSize, this.tileSize);
-            this.add.text(slot.x * this.tileSize, slot.y * this.tileSize, slot.id, { fontSize: '8px', color: '#000' });
+            const text = this.add.text(slot.x * this.tileSize, slot.y * this.tileSize, '', { fontSize: '8px', color: '#000' });
+            this.rackLabels.set(slot.id, text);
         });
+        this.updateRackVisuals();
 
         this.player = this.physics.add.sprite(400, 300, 'player_placeholder');
         this.player.setCollideWorldBounds(true);
@@ -247,6 +250,7 @@ export class GameScene extends Phaser.Scene {
                         if (order?.status === 'PACKING') {
                             this.showDialogue("All items picked! \nGo to the Shipping Area (Top Right).");
                         }
+                        this.updateRackVisuals();
                     }
                 } else {
                     // Inbound Mode: Put Away
@@ -261,8 +265,10 @@ export class GameScene extends Phaser.Scene {
                             this.time.delayedCall(2000, () => {
                                 this.warehouseManager.switchMode(GameMode.PICKING);
                                 this.updateOrderDisplay();
+                                this.updateRackVisuals();
                             });
                         }
+                        this.updateRackVisuals();
                     }
                 }
             }
@@ -357,6 +363,16 @@ export class GameScene extends Phaser.Scene {
 
             prevX = follower.x;
             prevY = follower.y;
+        });
+    }
+
+    private updateRackVisuals() {
+        this.slottingManager.getAllSlots().forEach(slot => {
+            const text = this.rackLabels.get(slot.id);
+            if (text) {
+                const itemTypeAbbr = slot.itemType ? slot.itemType[0] : '';
+                text.setText(`${slot.id}\n${itemTypeAbbr}(${slot.quantity})`);
+            }
         });
     }
 }
