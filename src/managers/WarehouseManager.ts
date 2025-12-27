@@ -1,46 +1,6 @@
 import { SlottingManager } from './SlottingManager';
-import type { Slot } from './SlottingManager';
-
-export const GameMode = {
-    PICKING: 'PICKING',
-    INBOUND: 'INBOUND'
-} as const;
-
-export type GameModeType = typeof GameMode[keyof typeof GameMode];
-
-export interface OrderItem {
-    id: string;
-    itemType: string;
-    quantity: number;
-    picked: number;
-    slotId: string;
-}
-
-export interface Order {
-    id: string;
-    items: OrderItem[];
-    status: 'PENDING' | 'PICKING' | 'PACKING' | 'SHIPPED';
-}
-
-export interface InboundTask {
-    itemType: string;
-    targetSlotId: string;
-    isReceived: boolean;
-    isCompleted: boolean;
-}
-
-export interface RoundConfig {
-    id: string;
-    phases: GameModeType[];
-    timeLimit: number; // in seconds
-}
-
-export interface RoundState {
-    config: RoundConfig;
-    currentPhaseIndex: number;
-    score: number;
-    isFinished: boolean;
-}
+import type { Slot, Order, InboundTask, RoundConfig, RoundState, GameModeType } from '../types';
+import { GameMode } from '../types';
 
 export class WarehouseManager {
     private slottingManager: SlottingManager;

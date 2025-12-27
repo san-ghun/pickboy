@@ -1,12 +1,4 @@
-export interface Slot {
-    id: string; // e.g., "A-01-1"
-    x: number;  // Tile X
-    y: number;  // Tile Y
-    zone: string;
-    occupied: boolean;
-    itemType?: string;
-    quantity: number;
-}
+import type { Slot } from '../types';
 
 export class SlottingManager {
     private slots: Map<string, Slot> = new Map();
