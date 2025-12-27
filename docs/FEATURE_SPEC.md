@@ -12,9 +12,11 @@
 - **Sparkles**: Animated stars that highlight the next target for the player. Targets are selected based on actual stock (Picking) or available space (Inbound).
 
 ## 3. User Interface
-- **Status HUD**: Displays current coordinates and specific zone names.
-- **Pick List HUD**: Real-time checklist of items required for the current order.
-- **Dialogue Boxes**: Pokémon-style popups for tutorials and feedback.
+- **Screen Resolution**: 1024x600 (800x600 game area + 224px sidebar).
+- **Sidebar HUD**: A dedicated area on the right side of the screen for game information.
+  - **Status HUD**: Displays current coordinates and specific zone names.
+  - **Pick List HUD**: Real-time checklist of items required for the current order or inbound tasks.
+- **Dialogue Boxes**: Pokémon-style popups for tutorials and feedback, centered over the game area.
 
 ## 4. Workflows
 - **Picking**: Approach a rack -> Press Space -> Item joins the follower chain.

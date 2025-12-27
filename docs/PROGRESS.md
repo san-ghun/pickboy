@@ -26,6 +26,11 @@
   - Real-time UI updates for rack stock labels.
   - Fixed UI reset bug (replaced scene restart with targeted label updates).
 
+- **Phase 7: UI Optimization (2025-12-27)**
+  - Increased game width to 1024px to accommodate a dedicated sidebar.
+  - Relocated Status HUD and Pick List HUD to the sidebar to prevent visual overlap with the shipping zone.
+  - Optimized text word wrapping for sidebar display.
+
 ## 📊 Current State
 - Core Pick-to-Ship and Put-Away cycles are fully implemented with dynamic stock management and randomization.
 - UI provides real-time feedback on rack quantities.
