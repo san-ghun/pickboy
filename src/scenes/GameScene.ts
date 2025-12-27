@@ -91,8 +91,20 @@ export class GameScene extends Phaser.Scene {
             this.interactKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         }
 
-        this.statusText = this.add.text(10, 10, 'Location: -', { color: '#ffffff', backgroundColor: '#000000' });
-        this.orderText = this.add.text(600, 10, 'Pick List:\n- ', { color: '#00ff00', backgroundColor: '#000000', fontSize: '14px' });
+        // Sidebar Background
+        const sidebar = this.add.rectangle(800, 0, 224, 600, 0x2c3e50).setOrigin(0);
+        sidebar.setStrokeStyle(2, 0x34495e);
+
+        this.statusText = this.add.text(810, 10, 'Location: -', {
+            color: '#ffffff',
+            fontSize: '14px',
+            wordWrap: { width: 204 }
+        });
+        this.orderText = this.add.text(810, 60, 'Pick List:\n- ', {
+            color: '#00ff00',
+            fontSize: '14px',
+            wordWrap: { width: 204 }
+        });
 
         // Setup Dialogue UI
         this.createDialogueUI();
