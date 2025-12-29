@@ -1,0 +1,7 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "qcboy"
+compatibility_date = "2025-12-28"
+pages_build_output_dir = "dist"
+
+[vars]
+# Add environment variables here

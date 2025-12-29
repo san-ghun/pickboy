@@ -1,4 +1,4 @@
-# Warehouse Simulation Game (Pokémon Style)
+# PickBoy - Warehouse Simulation Game
 
 A 2D top-down simulation game with a Pokémon-style pixel art aesthetic to experience and learn warehouse logistics processes.
 
